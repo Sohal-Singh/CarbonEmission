@@ -22,3 +22,14 @@ for column in categorical_columns:
     df[column] = encoder.fit_transform(df[column].astype(str))
 print("\nEncoded Dataset:")
 print(df.head())
+print(df["CarbonEmission"].describe())
+
+bins = [0, 1538, 2768, float("inf")]
+labels = ["Low", "Medium", "High"]
+
+df["CarbonEmission"] = pd.cut(
+    df["CarbonEmission"],
+    bins=bins,
+    labels=labels
+)
+print(df.head())
