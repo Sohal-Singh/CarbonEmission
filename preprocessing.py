@@ -24,12 +24,17 @@ print("\nEncoded Dataset:")
 print(df.head())
 print(df["CarbonEmission"].describe())
 
-bins = [0, 1538, 2768, float("inf")]
-labels = ["Low", "Medium", "High"]
+low_limit = df["CarbonEmission"].quantile(0.33)
+high_limit = df["CarbonEmission"].quantile(0.66)
 
-df["CarbonEmission"] = pd.cut(
-    df["CarbonEmission"],
-    bins=bins,
-    labels=labels
-)
-print(df.head())
+def emission_category(value):
+    if value <= low_limit:
+        return 0
+    elif value <= high_limit:
+        return 1
+    else:
+        return 2
+
+df["Emission Category"] = df["CarbonEmission"].apply(emission_category)
+print(df[["CarbonEmission", "Emission Category"]].head())
+print(df["Emission Category"].value_counts())
