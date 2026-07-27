@@ -1,5 +1,6 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder, MultiLabelBinarizer
+import ast
 import joblib
 
 df = pd.read_csv("CarbonEmission.csv")
@@ -19,28 +20,64 @@ print("\nShape After Removing Duplicates:")
 print(df.shape)
 
 df["Vehicle Type"] = df["Vehicle Type"].fillna("None")
+df["Cooking_With"] = df["Cooking_With"].apply(ast.literal_eval)
+df["Recycling"] = df["Recycling"].apply(ast.literal_eval)
+
 print("\nMissing Values After Filling:")
 print(df.isnull().sum())
 
 print("\nCategorical Columns:")
 print(df.select_dtypes(include="object").columns)
+cooking_encoder = MultiLabelBinarizer()
 
-encoder = LabelEncoder()
+cooking_encoded = cooking_encoder.fit_transform(df["Cooking_With"])
+
+cooking_df = pd.DataFrame(
+    cooking_encoded,
+    columns=["Cooking_" + x for x in cooking_encoder.classes_],
+    index=df.index
+)
+
+
+recycling_encoder = MultiLabelBinarizer()
+
+recycling_encoded = recycling_encoder.fit_transform(df["Recycling"])
+
+recycling_df = pd.DataFrame(
+    recycling_encoded,
+    columns=["Recycle_" + x for x in recycling_encoder.classes_],
+    index=df.index
+)
+df = pd.concat(
+    [df, cooking_df, recycling_df],
+    axis=1
+)
+df.drop(
+    ["Cooking_With", "Recycling"],
+    axis=1,
+    inplace=True
+)
 categorical_columns = df.select_dtypes(include="object").columns
 
-'''
-ENCODER FIXES REQUIRED:
-1) The LabelEncoder's states are not being saved, only the last column's state is saved. 
-To fix this, we need to save the encoder's state for each categorical column separately.
+onehot_encoder = OneHotEncoder(
+    handle_unknown="ignore",
+    sparse_output=False
+)
 
-2) The columns "Recycling" and "Cooking_With" are not being encoded correctly.
-To fix: Use MultiLabelBinarizer for these columns instead of LabelEncoder, as they contain multiple labels per entry.
-'''
+encoded_data = onehot_encoder.fit_transform(df[categorical_columns])
 
-for column in categorical_columns:
-    df[column] = encoder.fit_transform(df[column].astype(str))
+encoded_df = pd.DataFrame(
+    encoded_data,
+    columns=onehot_encoder.get_feature_names_out(categorical_columns),
+    index=df.index
+)
 
-joblib.dump(encoder, "Models/label_encoder.pkl")
+df = pd.concat(
+    [df.drop(columns=categorical_columns), encoded_df],
+    axis=1
+)
+
+joblib.dump(onehot_encoder, "Models/onehot_encoder.joblib")
 
 print("\nEncoded Dataset:")
 print(df.head())
@@ -60,4 +97,3 @@ def emission_category(value):
 df["Emission Category"] = df["CarbonEmission"].apply(emission_category)
 print(df[["CarbonEmission", "Emission Category"]].head())
 print(df["Emission Category"].value_counts())
-print(encoder.classes_)
