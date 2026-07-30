@@ -77,7 +77,9 @@ df = pd.concat(
     axis=1
 )
 
-joblib.dump(onehot_encoder, "Models/onehot_encoder.joblib")
+joblib.dump(cooking_encoder,"Models/cooking_encoder.joblib")
+joblib.dump(recycling_encoder,"Models/recycling_encoder.joblib")
+joblib.dump(onehot_encoder,"Models/onehot_encoder.joblib")
 
 print("\nEncoded Dataset:")
 print(df.head())
