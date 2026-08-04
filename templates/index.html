@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carbon Footprint Calculator · AI Powered</title>
+<meta name="description" content="Estimate your household carbon footprint using a machine learning model and get tailored suggestions to reduce it.">
+
+<!-- Fonts: Fraunces (display, characterful serif) + Inter (body) + JetBrains Mono (data/utility) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- AMBIENT BACKGROUND: contour / topographic elevation lines     -->
+<!-- ============================================================ -->
+<div class="terrain-bg" aria-hidden="true">
+  <svg class="terrain-svg" viewBox="0 0 1600 1400" preserveAspectRatio="xMidYMin slice">
+    <path class="contour c1" d="M-100,120 C 250,60 450,180 700,120 C 950,60 1150,170 1700,90" />
+    <path class="contour c2" d="M-100,240 C 220,190 480,300 760,230 C 1020,170 1240,290 1700,210" />
+    <path class="contour c3" d="M-100,360 C 260,300 500,410 780,350 C 1040,290 1260,400 1700,330" />
+    <path class="contour c4" d="M-100,480 C 240,420 520,530 800,470 C 1060,410 1280,520 1700,450" />
+    <path class="contour c5" d="M-100,600 C 260,540 540,650 820,590 C 1080,530 1300,640 1700,570" />
+    <path class="contour c6" d="M-100,900 C 260,840 540,960 820,900 C 1080,840 1300,950 1700,880" />
+    <path class="contour c7" d="M-100,1040 C 260,980 540,1100 820,1040 C 1080,980 1300,1090 1700,1020" />
+    <path class="contour c8" d="M-100,1180 C 260,1120 540,1240 820,1180 C 1080,1120 1300,1230 1700,1160" />
+  </svg>
+</div>
+
+<!-- ============================================================ -->
+<!-- TOP BAR                                                       -->
+<!-- ============================================================ -->
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"><i class="fa-solid fa-leaf"></i></span>
+    <span class="brand-name">Carbon emission<span class="brand-accent">predictor</span></span>
+  </div>
+  <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <i class="fa-solid fa-moon"></i>
+  </button>
+</header>
+
+<!-- ============================================================ -->
+<!-- HERO                                                          -->
+<!-- ============================================================ -->
+<section class="hero">
+  <p class="eyebrow"><i class="fa-solid fa-satellite-dish"></i> Machine learning · Logistic Regression model</p>
+  <h1 class="hero-title">Carbon Footprint<br><span class="hero-title-accent">Calculator</span></h1>
+  <p class="hero-subtitle">Estimate your environmental impact using Machine Learning</p>
+  <p class="hero-desc">Answer a few questions about your lifestyle — transport, diet, energy and waste habits —
+    and our trained model will classify your yearly carbon output while an AI assistant
+    suggests concrete ways to bring it down.</p>
+  <a href="#calculator" class="hero-cta">
+    Start your assessment <i class="fa-solid fa-arrow-down"></i>
+  </a>
+
+  <div class="hero-stats" aria-hidden="true">
+    <div class="stat"><span class="stat-num" data-count="4.8">0</span><span class="stat-label">avg. tons CO₂e / mo (global)</span></div>
+    <div class="stat"><span class="stat-num" data-count="20">0</span><span class="stat-label">lifestyle features analysed</span></div>
+    <div class="stat"><span class="stat-num" data-count="3">0</span><span class="stat-label">impact tiers · low / med / high</span></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- CALCULATOR FORM                                               -->
+<!-- ============================================================ -->
+<main class="calculator-wrap" id="calculator">
+  <form id="footprintForm" class="glass-card" action="/predict" method="POST" novalidate>
+
+    <div class="card-heading">
+      <h2>Tell us about your lifestyle</h2>
+      <p>Every field feeds directly into the prediction model. Fields marked <span class="req">*</span> are required.</p>
+    </div>
+
+    <!-- ---------------- PERSONAL INFORMATION ---------------- -->
+    <fieldset class="section">
+      <legend><i class="fa-solid fa-user"></i> Personal Information</legend>
+      <div class="grid">
+
+        <div class="field">
+          <label for="bodyType">Body Type <span class="req">*</span></label>
+          <select id="bodyType" name="Body Type" required>
+            <option value="" disabled selected>Select body type</option>
+            <option value="underweight">Underweight</option>
+            <option value="normal">Normal</option>
+            <option value="overweight">Overweight</option>
+            <option value="obese">Obese</option>
+          </select>
+          <span class="error-msg">Please select a body type.</span>
+        </div>
+
+        <div class="field">
+          <label for="sex">Sex <span class="req">*</span></label>
+          <select id="sex" name="Sex" required>
+            <option value="" disabled selected>Select sex</option>
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+          <span class="error-msg">Please select an option.</span>
+        </div>
+
+        <div class="field">
+          <label for="diet">Diet <span class="req">*</span></label>
+          <select id="diet" name="Diet" required>
+            <option value="" disabled selected>Select diet type</option>
+            <option value="omnivore">Omnivore</option>
+            <option value="pescatarian">Pescatarian</option>
+            <option value="vegetarian">Vegetarian</option>
+            <option value="vegan">Vegan</option>
+          </select>
+          <span class="error-msg">Please select a diet.</span>
+        </div>
+
+        <div class="field">
+          <label for="shower">How Often Shower <span class="req">*</span></label>
+          <select id="shower" name="How Often Shower" required>
+            <option value="" disabled selected>Select frequency</option>
+            <option value="less frequently">Less frequently</option>
+            <option value="daily">Daily</option>
+            <option value="more frequently">More frequently</option>
+            <option value="twice a day">Twice a day</option>
+          </select>
+          <span class="error-msg">Please select a shower frequency.</span>
+        </div>
+
+        <div class="field">
+          <label for="social">Social Activity <span class="req">*</span></label>
+          <select id="social" name="Social Activity" required>
+            <option value="" disabled selected>Select frequency</option>
+            <option value="never">Never</option>
+            <option value="sometimes">Sometimes</option>
+            <option value="often">Often</option>
+          </select>
+          <span class="error-msg">Please select an option.</span>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ---------------- TRANSPORTATION ---------------- -->
+    <fieldset class="section">
+      <legend><i class="fa-solid fa-car-side"></i> Transportation</legend>
+      <div class="grid">
+
+        <div class="field">
+          <label for="transport">Transport <span class="req">*</span></label>
+          <select id="transport" name="Transport" required>
+            <option value="" disabled selected>Select mode</option>
+            <option value="walk/bicycle">Walk / Bicycle</option>
+            <option value="public">Public transport</option>
+            <option value="private">Private vehicle</option>
+          </select>
+          <span class="error-msg">Please select a transport mode.</span>
+        </div>
+
+        <div class="field">
+          <label for="vehicleType">Vehicle Type</label>
+          <select id="vehicleType" name="Vehicle Type">
+            <option value="none" selected>None</option>
+            <option value="petrol">Petrol</option>
+            <option value="diesel">Diesel</option>
+            <option value="hybrid">Hybrid</option>
+            <option value="lpg">LPG</option>
+            <option value="electric">Electric</option>
+          </select>
+          <span class="hint">Only applies if you selected a private vehicle above.</span>
+        </div>
+
+        <div class="field">
+          <label for="airTravel">Frequency of Traveling by Air <span class="req">*</span></label>
+          <select id="airTravel" name="Frequency of Traveling by Air" required>
+            <option value="" disabled selected>Select frequency</option>
+            <option value="never">Never</option>
+            <option value="rarely">Rarely</option>
+            <option value="frequently">Frequently</option>
+            <option value="very frequently">Very frequently</option>
+          </select>
+          <span class="error-msg">Please select a frequency.</span>
+        </div>
+
+        <div class="field">
+          <label for="vehicleDistance">Vehicle Monthly Distance (Km) <span class="req">*</span></label>
+          <input type="number" id="vehicleDistance" name="Vehicle Monthly Distance Km" min="0" max="20000" step="1" placeholder="e.g. 350" required>
+          <span class="error-msg">Enter a distance between 0 and 20000 km.</span>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ---------------- HOME & LIFESTYLE ---------------- -->
+    <fieldset class="section">
+      <legend><i class="fa-solid fa-house-chimney"></i> Home &amp; Lifestyle</legend>
+      <div class="grid">
+
+        <div class="field">
+          <label for="heating">Heating Energy Source <span class="req">*</span></label>
+          <select id="heating" name="Heating Energy Source" required>
+            <option value="" disabled selected>Select source</option>
+            <option value="natural gas">Natural gas</option>
+            <option value="electricity">Electricity</option>
+            <option value="wood">Wood</option>
+            <option value="coal">Coal</option>
+          </select>
+          <span class="error-msg">Please select an energy source.</span>
+        </div>
+
+        <div class="field">
+          <label for="efficiency">Energy Efficiency <span class="req">*</span></label>
+          <select id="efficiency" name="Energy efficiency" required>
+            <option value="" disabled selected>Select rating</option>
+            <option value="No">No</option>
+            <option value="Sometimes">Sometimes</option>
+            <option value="Yes">Yes</option>
+          </select>
+          <span class="error-msg">Please select an option.</span>
+        </div>
+
+        <div class="field">
+          <label for="grocery">Monthly Grocery Bill ($) <span class="req">*</span></label>
+          <input type="number" id="grocery" name="Monthly Grocery Bill" min="0" max="5000" step="1" placeholder="e.g. 220" required>
+          <span class="error-msg">Enter an amount between 0 and 5000.</span>
+        </div>
+
+        <div class="field">
+          <label for="tvpc">TV / PC Use (hrs / day) <span class="req">*</span></label>
+          <input type="number" id="tvpc" name="How Long TV PC Daily Hour" min="0" max="24" step="0.5" placeholder="e.g. 3" required>
+          <span class="error-msg">Enter hours between 0 and 24.</span>
+        </div>
+
+        <div class="field">
+          <label for="internet">Internet Use (hrs / day) <span class="req">*</span></label>
+          <input type="number" id="internet" name="How Long Internet Daily Hour" min="0" max="24" step="0.5" placeholder="e.g. 5" required>
+          <span class="error-msg">Enter hours between 0 and 24.</span>
+        </div>
+
+        <div class="field">
+          <label for="clothes">New Clothes / Month <span class="req">*</span></label>
+          <input type="number" id="clothes" name="How Many New Clothes Monthly" min="0" max="100" step="1" placeholder="e.g. 4" required>
+          <span class="error-msg">Enter a number between 0 and 100.</span>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ---------------- SUSTAINABILITY ---------------- -->
+    <fieldset class="section">
+      <legend><i class="fa-solid fa-recycle"></i> Sustainability</legend>
+      <div class="grid">
+
+        <div class="field">
+          <label for="wasteBagSize">Waste Bag Size <span class="req">*</span></label>
+          <select id="wasteBagSize" name="Waste Bag Size" required>
+            <option value="" disabled selected>Select size</option>
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+            <option value="extra large">Extra large</option>
+          </select>
+          <span class="error-msg">Please select a waste bag size.</span>
+        </div>
+
+        <div class="field">
+          <label for="wasteBagCount">Waste Bags / Week <span class="req">*</span></label>
+          <input type="number" id="wasteBagCount" name="Waste Bag Weekly Count" min="0" max="50" step="1" placeholder="e.g. 3" required>
+          <span class="error-msg">Enter a count between 0 and 50.</span>
+        </div>
+
+        <div class="field checkbox-field">
+          <span class="checkbox-label">Cooking Methods Used <span class="req">*</span></span>
+          <div class="checkbox-group" id="cookingGroup">
+            <label class="chip"><input type="checkbox" name="Cooking_With" value="Stove"><i class="fa-solid fa-fire"></i> Stove</label>
+            <label class="chip"><input type="checkbox" name="Cooking_With" value="Oven"><i class="fa-solid fa-mug-hot"></i> Oven</label>
+            <label class="chip"><input type="checkbox" name="Cooking_With" value="Microwave"><i class="fa-solid fa-square"></i> Microwave</label>
+            <label class="chip"><input type="checkbox" name="Cooking_With" value="Grill"><i class="fa-solid fa-drumstick-bite"></i> Grill</label>
+            <label class="chip"><input type="checkbox" name="Cooking_With" value="Airfryer"><i class="fa-solid fa-wind"></i> Airfryer</label>
+          </div>
+          <span class="error-msg">Select at least one cooking method.</span>
+        </div>
+
+        <div class="field checkbox-field">
+          <span class="checkbox-label">Recycling Habits <span class="req">*</span></span>
+          <div class="checkbox-group" id="recyclingGroup">
+            <label class="chip"><input type="checkbox" name="Recycling" value="Paper"><i class="fa-solid fa-file"></i> Paper</label>
+            <label class="chip"><input type="checkbox" name="Recycling" value="Plastic"><i class="fa-solid fa-bottle-water"></i> Plastic</label>
+            <label class="chip"><input type="checkbox" name="Recycling" value="Glass"><i class="fa-solid fa-wine-bottle"></i> Glass</label>
+            <label class="chip"><input type="checkbox" name="Recycling" value="Metal"><i class="fa-solid fa-cubes"></i> Metal</label>
+          </div>
+          <span class="error-msg">Select at least one recycling habit (or "None" is not applicable — select what you do).</span>
+        </div>
+
+      </div>
+    </fieldset>
+
+    <!-- ---------------- ACTIONS ---------------- -->
+    <div class="form-actions">
+      <button type="button" id="resetBtn" class="btn-ghost">
+        <i class="fa-solid fa-arrow-rotate-left"></i> Reset form
+      </button>
+      <button type="submit" id="submitBtn" class="btn-primary">
+        <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Calculate My Carbon Footprint</span>
+        <span class="btn-loader" aria-hidden="true"></span>
+      </button>
+    </div>
+
+  </form>
+
+  <!-- ============================================================ -->
+  <!-- RESULT CARD (hidden until prediction returns)                 -->
+  <!-- ============================================================ -->
+  <section id="resultCard" class="glass-card result-card" hidden aria-live="polite">
+
+    <div class="result-heading">
+      <h2><i class="fa-solid fa-seedling"></i> Carbon Footprint Result</h2>
+      <button type="button" id="closeResult" class="icon-btn" aria-label="Close result">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="result-body">
+
+      <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 220 220">
+          <circle class="ring-track" cx="110" cy="110" r="92"></circle>
+          <circle class="ring-progress" id="ringProgress" cx="110" cy="110" r="92"></circle>
+        </svg>
+        <div class="ring-center">
+          <span class="ring-icon" id="ringIcon"><i class="fa-solid fa-leaf"></i></span>
+          <span class="ring-category" id="ringCategory">{{ prediction_category | default('MEDIUM') }}</span>
+          <span class="ring-caption">impact tier</span>
+        </div>
+      </div>
+
+      <div class="result-details">
+        <div class="prediction-score">
+    <h3>Predicted Carbon Emission</h3>
+
+    <p>
+        <span id="predictedScore">0</span>
+        <small>kg CO₂ / year</small>
+    </p>
+</div>
+        <p class="result-summary">
+          Based on your inputs, our Logistic Regression model estimates your household
+          sits in the <strong id="resultCategoryText">{{ prediction_category | default('MEDIUM') }}</strong> carbon impact tier.
+        </p>
+
+        <div class="suggestions">
+          <h3><i class="fa-solid fa-robot"></i> AI Suggestions</h3>
+          <ul id="suggestionsList">
+            <!-- Flask will replace this list via {{ suggestions }} -->
+            {% if suggestions %}
+              {% for tip in suggestions %}
+                <li><i class="fa-solid fa-circle-check"></i> {{ tip }}</li>
+              {% endfor %}
+            {% else %}
+              <li><i class="fa-solid fa-circle-check"></i> Use public transport or carpool when possible.</li>
+              <li><i class="fa-solid fa-circle-check"></i> Reduce electricity usage during peak hours.</li>
+              <li><i class="fa-solid fa-circle-check"></i> Walk or cycle for short distances.</li>
+              <li><i class="fa-solid fa-circle-check"></i> Switch to a plant-forward diet a few days a week.</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" id="calculateAgain" class="btn-primary btn-again">
+      <i class="fa-solid fa-rotate"></i> Calculate Again
+    </button>
+  </section>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- FOOTER                                                        -->
+<!-- ============================================================ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark small"><i class="fa-solid fa-leaf"></i></span>
+      CarbonEmission<span class="brand-accent">Predictor</span>
+    </div>
+    <p class="footer-note">Built as an academic ML project · Flask + Scikit-learn backend · Predictions are estimates, not certified measurements.</p>
+    <p class="footer-copy">Carbon Footprint Calculator</p>
+  </div>
+</footer>
+
+<!-- Toast for validation feedback -->
+<div id="toast" class="toast" role="alert" aria-hidden="true"></div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
